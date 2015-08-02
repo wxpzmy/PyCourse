@@ -8,7 +8,7 @@
    * setup yaml configuration file in conf directory.
    * If any confusion, see the site-template.yaml as example
    * Modify logging.yaml if your want.
-   * Run with: pycourse
+   * Run with: ./pycourse
    * --help or -h with further help for argument.
    
 ### Features:

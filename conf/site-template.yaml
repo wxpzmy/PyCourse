@@ -1,0 +1,13 @@
+
+seeds: ["The course page with urls "] # a list contains urls
+
+names: ["The course name or table name in db or folder name in file system you want "] # must be matched with seeds sequences
+
+resources: ["pdf", "mp4"] # now only two choice 
+
+dumpdirs: "The dump location in your file system" # must be a valid dir location in your filesystem with proper permission
+
+user: # your login username for Coursera
+
+pwd:  # your password for Coursera
+
