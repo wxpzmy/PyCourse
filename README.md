@@ -1,4 +1,4 @@
-## pycourse project: one command multi-course
+## pycourse project: one command many courses
 
 ### How to setup:
 
@@ -6,7 +6,7 @@
    * Further database support will be added later. 
    * pip install -r requirements.txt
    * setup yaml configuration file in conf directory.
-   * If any confusion, see the site-template.yaml as example
+   * If any confusion, see the site-template.yaml as example.
    * Modify logging.yaml if your want.
    * Run with: ./pycourse
    * --help or -h with further help for argument.
@@ -17,9 +17,9 @@
    
    Like Apache Maven's phase property, pycourse is also divied into four phase:
    
-   * launch : just download the all the url into db
-   * download : fetch the resources based on the url in db
-   * dump : dump the resources from db into local file system
+   * launch : just download the all the url into db.
+   * download : fetch the resources based on the url in db.
+   * dump : dump the resources from db into local file system.
    * cleanup: drop the table in db.
 
    With --action configuration, the whole process can be easily controlled and tuned.
