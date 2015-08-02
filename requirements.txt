@@ -1,0 +1,4 @@
+PyYAML=3.11
+requestes=2.7.0
+BeautifulSoup4=4.4.0
+

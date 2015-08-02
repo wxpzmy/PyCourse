@@ -1,0 +1,148 @@
+#! /usr/bin/python
+import os
+import argparse
+import yaml
+import logging
+import logging.config
+from multiprocessing import Process
+from login import login_coursera
+
+parser = argparse.ArgumentParser()
+
+# log configuration location
+parser.add_argument('-lc', '--logconf', default="conf/logging.yaml",
+                    type=str, help="Specify logging configuration")
+# site configuration localtion
+parser.add_argument('-mc', '--siteconf', default="conf/site.yaml",
+                    type=str, help="Specify site configuration")
+
+# action argument
+"""There will be four phase for downloading.
+
+     Launch:   Store all the url in the database for further usage.
+               Use this one can avoid download any content to test the application.
+     Download: Perform Launch phase and download all the resources of url in database.
+               
+     Dump:     Perform Launch and Download as well as dump target resource into the local disk.
+
+     Cleanup:  Clean the target resource which means drop the table in database.
+
+"""
+parser.add_argument('-ac', '--action', help="Specify phase", default="dump",
+                    type=str, choices=['launch', 'download', 'dump', 'cleanup'])
+
+# download amount argument
+"""Specify the number of items to be download.
+   default is -1 which means ALL
+"""
+parser.add_argument('-n', '--num', help="Specify download amount", 
+                    default=-1, type=int)
+
+args = parser.parse_args()
+
+def setup_logging(path):
+    """Setup logging configuration
+    """
+    if os.path.exists(path):
+        with open(path, 'rt') as f:
+            config = yaml.load(f.read())
+            logging.config.dictConfig(config)
+    else:
+        raise IOError("Invalid log configuration file.")
+
+def setup_site(path):
+    """setup site configuation
+    """
+    if os.path.exists(path):
+        config = None
+        with open(path, 'rt') as f:
+            config = yaml.load(f.read())
+    else:
+        logger.error("Fail to fetch site configuration file.")
+        raise IOError("Invalid site configuration file.")
+    
+    # check the sanity of configuration
+
+    # make sure the user name and password is provided.
+    if not config['user'] or not config['pwd']:
+        logger.error("Empty user name or password for login")
+        raise RuntimeError("Empty user name or password for login")
+
+    # make sure the information is paired. 
+    if not (len(config['seeds']) == len(config['names'])):
+        logger.error("Invalid Site Configuration Value.")
+        raise RuntimeError("Invalid site configuration value.")
+
+    # make sure each element in seeds are unique
+    if len(config['seeds']) != len(set(config['seeds'])):
+       logger.error("Duplicate element in seeds.")
+       raise RuntimeError("Duplicate element in seed configuration")
+
+    # make sure each element in names are unique 
+    if len(config['names']) != len(set(config['names'])):
+       logger.error("Duplicate element in names.")
+       raise RuntimeError("Duplicate element in name configuration")
+ 
+    return config
+
+
+## generate logging configuration and logger
+
+if not os.path.exists('./log'):
+    os.mkdir('./log')
+setup_logging(args.logconf)
+logger = logging.getLogger(__name__)
+
+if not os.path.exists('./db'):
+    os.mkdir('./db')
+
+## generate site configuration
+logger.info("Setting up the site configuration")
+site_config = setup_site(args.siteconf)
+logger.info("Site configuration created!")
+
+## configuration debug
+logger.debug(str(site_config))
+
+seeds = site_config['seeds']
+names = site_config['names']
+mfilter = site_config['resources']
+dump_dir = site_config['dumpdirs']
+user = site_config['user']
+pwd = site_config['pwd']
+
+if not os.path.exists(dump_dir):
+    os.mkdir(dump_dir)
+
+logger.info("Generating session ... ")
+session = login_coursera(user, pwd)
+logger.info("Successfully login")
+
+action = args.action
+item_num = args.num
+
+passing_args = []
+
+## generate input parameter dictionary
+for seed, name in zip(seeds, names):
+    temp_list = [seed, name, mfilter, dump_dir, action, item_num, session]
+    passing_args.append(tuple(temp_list))
+
+logger.debug(passing_args)
+
+## multiprocess for multiple courses
+processes = []
+## use manager to pass argument between proceess
+
+from downloader import download as dl
+
+for arg in passing_args:
+    logger.info('Begin downloading from {seed}'.format(seed=arg[0]))
+    p = Process(target=dl, args=arg)
+    logger.info('Process start.')
+    p.start()
+    processes.append(p)
+
+for each_p in processes:
+    p.join()
+
